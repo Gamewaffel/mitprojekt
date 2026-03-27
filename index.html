@@ -1,1 +1,148 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Internet Speeds (Ookla Data)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Tailwind Konfiguration für Neon-Farbe
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        neon: "#00f2ff",
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Ein bisschen CSS für den globalen Look */
+        body { background-color: #000000; color: white; margin: 0; font-family: sans-serif; }
+        .neon-shadow { box-shadow: 0 0 15px rgba(0, 242, 255, 0.5); }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
 
+    <script type="text/babel">
+        // Einfache Icon-Komponente, da wir lucide-react nicht direkt laden können
+        const Icon = ({ name, color, size = 24, className }) => {
+            const createIcon = () => {
+                const icon = lucide.createIcons.icons[name];
+                return { __html: icon };
+            };
+            return <i data-lucide={name} style={{ color: color, width: size, height: size }} className={className}></i>;
+        };
+
+        // Daten basierend auf Ookla Speedtest Global Index (Median Mbps - Fixed Broadband)
+        const SPEED_DATA = [
+            { id: 'asia', name: 'Asien', value: 295, color: '#00f2ff', countries: [
+                { name: 'Singapur', val: 372 }, { name: 'Hong Kong', val: 310 }, { name: 'Thailand', val: 247 }, { name: 'China', val: 223 }
+            ]},
+            { id: 'europe', name: 'Europa', value: 215, color: '#bd00ff', countries: [
+                { name: 'Frankreich', val: 315 }, { name: 'Dänemark', val: 255 }, { name: 'Spanien', val: 248 }, { name: 'Deutschland', val: 102 }
+            ]},
+            { id: 'americas', name: 'Amerika', value: 230, color: '#ff0055', countries: [
+                { name: 'USA', val: 308 }, { name: 'Chile', val: 297 }, { name: 'Kanada', val: 256 }, { name: 'Brasilien', val: 221 }
+            ]},
+            { id: 'mideast', name: 'Mittlerer Osten', value: 240, color: '#70ff00', countries: [
+                { name: 'VAE', val: 356 }, { name: 'Kuwait', val: 229 }, { name: 'Katar', val: 196 }, { name: 'Jordanien', val: 195 }
+            ]}
+        ];
+
+        function SpeedVisualizer() {
+            const [activeCont, setActiveCont] = React.useState(null);
+
+            // Nach dem Rendern Lucide Icons aktivieren
+            React.useEffect(() => {
+                lucide.createIcons();
+            }, [activeCont]); // Führe es erneut aus, wenn sich die Ansicht ändert
+
+            const currentSelection = activeCont 
+                ? SPEED_DATA.find(c => c.id === activeCont)
+                : null;
+
+            const displayData = activeCont 
+                ? currentSelection.countries.map(c => ({ name: c.name, value: c.val, color: currentSelection.color }))
+                : SPEED_DATA;
+
+            return (
+                <div className="min-h-screen p-6 md:p-12 selection:bg-neon/30 relative">
+                    {/* Background Glow */}
+                    <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+                        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-500/10 blur-[120px] rounded-full" />
+                        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-500/10 blur-[120px] rounded-full" />
+                    </div>
+
+                    <div className="max-w-5xl mx-auto relative z-10">
+                        <header className="mb-16 flex flex-col md:flex-row md:items-end justify-between gap-6">
+                            <div>
+                                <div className="flex items-center gap-3 mb-2">
+                                    <Icon name="activity" color={activeCont ? currentSelection.color : '#00f2ff'} className="animate-pulse" />
+                                    <span className="tracking-[0.3em] text-sm font-bold uppercase opacity-70" style={{color: activeCont ? currentSelection.color : '#00f2ff'}}>Ookla Data Feed</span>
+                                </div>
+                                <h1 className="text-5xl md:text-7xl font-black tracking-tighter">
+                                    {activeCont ? currentSelection.name : 'GLOBAL SPEEDS'}
+                                </h1>
+                                <p className="text-gray-400 mt-2">Median Fixed Broadband (Mbps)</p>
+                            </div>
+
+                            {activeCont && (
+                                <button 
+                                    onClick={() => setActiveCont(null)}
+                                    className="group flex items-center gap-2 px-6 py-3 bg-white/5 border border-white/10 backdrop-blur-md rounded-full hover:bg-white/10 transition-all shadow-2xl"
+                                >
+                                    <Icon name="arrow-left" color="white" size={20} className="group-hover:-translate-x-1 transition-transform" />
+                                    <span>Zurück zur Übersicht</span>
+                                </button>
+                            )}
+                        </header>
+
+                        <div className="grid gap-8">
+                            {displayData.map((item, i) => (
+                                <div
+                                    key={item.name}
+                                    onClick={() => !activeCont && setActiveCont(item.id)}
+                                    className={`relative ${!activeCont ? 'cursor-pointer hover:translate-x-3 transition-transform' : ''}`}
+                                >
+                                    <div className="flex justify-between items-end mb-3 px-2">
+                                        <span className="text-xl font-bold tracking-tight uppercase italic">{item.name}</span>
+                                        <span className="text-2xl font-mono font-black" style={{ color: item.color }}>
+                                            {item.value} <span className="text-sm opacity-50">Mbps</span>
+                                        </span>
+                                    </div>
+
+                                    {/* 3D Glass Bar */}
+                                    <div className="h-12 w-full bg-white/5 rounded-lg overflow-hidden border border-white/10 relative shadow-inner">
+                                        <div
+                                            style={{ 
+                                                width: `${(item.value / 400) * 100}%`,
+                                                background: `linear-gradient(90deg, ${item.color}44 0%, ${item.color} 100%)`,
+                                                boxShadow: `0 0 30px ${item.color}66`,
+                                                transition: 'width 1s ease-out'
+                                            }}
+                                            className="h-full relative overflow-hidden"
+                                        >
+                                            {/* Glossy Overlay */}
+                                            <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent h-1/2" />
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<SpeedVisualizer />);
+    </script>
+</body>
+</html>
